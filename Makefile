@@ -9,14 +9,14 @@ ifdef NIGHTLY
 	rpm_version := nightly
 	rpm_iteration := 0
 	deb_version := nightly
-	deb_iteration := 0
+	deb_iteration := 1
 	tar_version := nightly
 else ifeq ($(tag),)
 	version := $(next_version)
 	rpm_version := $(version)~$(commit)-0
 	rpm_iteration := 0
-	deb_version := $(version)~$(commit)-0
-	deb_iteration := 0
+	deb_version := $(version)~$(commit)-1
+	deb_iteration := 1
 	tar_version := $(version)~$(commit)
 else ifneq ($(findstring -rc,$(tag)),)
 	version := $(word 1,$(subst -, ,$(tag)))
@@ -25,7 +25,7 @@ else ifneq ($(findstring -rc,$(tag)),)
 	rpm_version := $(version)-0.$(rc)
 	rpm_iteration := 0.$(subst rc,,$(rc))
 	deb_version := $(version)~$(rc)-1
-	deb_iteration := 0
+	deb_iteration := 1
 	tar_version := $(version)~$(rc)
 else
 	version := $(tag:v%=%)
@@ -236,10 +236,9 @@ install: $(buildbin)
 	@if [ $(GOOS) != "windows" ]; then cp -fv etc/telegraf.conf $(DESTDIR)$(sysconfdir)/telegraf/telegraf.conf$(conf_suffix); fi
 	@if [ $(GOOS) != "windows" ]; then cp -fv etc/logrotate.d/telegraf $(DESTDIR)$(sysconfdir)/logrotate.d; fi
 	@if [ $(GOOS) = "windows" ]; then cp -fv etc/telegraf_windows.conf $(DESTDIR)/telegraf.conf; fi
-	@if [ $(GOOS) = "linux" ]; then scripts/check-dynamic-glibc-versions.sh $(buildbin) $(glibc_version); fi
+# @if [ $(GOOS) = "linux" ]; then scripts/check-dynamic-glibc-versions.sh $(buildbin) $(glibc_version); fi
 	@if [ $(GOOS) = "linux" ]; then mkdir -pv $(DESTDIR)$(prefix)/lib/telegraf/scripts; fi
 	@if [ $(GOOS) = "linux" ]; then cp -fv scripts/telegraf.service $(DESTDIR)$(prefix)/lib/telegraf/scripts; fi
-	@if [ $(GOOS) = "linux" ]; then cp -fv scripts/init.sh $(DESTDIR)$(prefix)/lib/telegraf/scripts; fi
 
 # Telegraf build per platform.  This improves package performance by sharing
 # the bin between deb/rpm/tar packages over building directly into the package
@@ -319,6 +318,16 @@ $(include_packages):
 	@$(MAKE) install
 	@mkdir -p $(pkgdir)
 
+	@echo "$@"
+	@echo $(basename $@)
+	@echo $(suffix $@)
+	@echo $(glibc_version)
+	@echo $(version)
+	@echo $(deb_iteration)
+	@echo $(DESTDIR)
+	@echo $(pkgdir)
+	@echo $(deb_version)
+
 	@if [ "$(suffix $@)" = ".rpm" ]; then \
 		fpm --force \
 			--log info \
@@ -334,7 +343,7 @@ $(include_packages):
 			--after-install scripts/rpm/post-install.sh \
 			--before-install scripts/rpm/pre-install.sh \
 			--after-remove scripts/rpm/post-remove.sh \
-			--description "Plugin-driven server agent for reporting metrics into InfluxDB." \
+			--description "Plugin-driven server agent for reporting metrics and events." \
 			--depends coreutils \
 			--depends shadow-utils \
 			--rpm-digest sha256 \
@@ -345,27 +354,7 @@ $(include_packages):
 			--chdir $(DESTDIR) \
 			--package $(pkgdir)/telegraf-$(rpm_version).$@ ;\
 	elif [ "$(suffix $@)" = ".deb" ]; then \
-		fpm --force \
-			--log info \
-			--architecture $(basename $@) \
-			--input-type dir \
-			--output-type deb \
-			--vendor InfluxData \
-			--url https://github.com/influxdata/telegraf \
-			--license MIT \
-			--maintainer support@influxdb.com \
-			--config-files /etc/telegraf/telegraf.conf.sample \
-			--config-files /etc/logrotate.d/telegraf \
-			--after-install scripts/deb/post-install.sh \
-			--before-install scripts/deb/pre-install.sh \
-			--after-remove scripts/deb/post-remove.sh \
-			--before-remove scripts/deb/pre-remove.sh \
-			--description "Plugin-driven server agent for reporting metrics into InfluxDB." \
-			--name telegraf \
-			--version $(version) \
-			--iteration $(deb_iteration) \
-			--chdir $(DESTDIR) \
-			--package $(pkgdir)/telegraf_$(deb_version)_$@	;\
+		./packages/build-deb.sh ;\
 	elif [ "$(suffix $@)" = ".zip" ]; then \
 		(cd $(dir $(DESTDIR)) && zip -r - ./*) > $(pkgdir)/telegraf-$(tar_version)_$@ ;\
 	elif [ "$(suffix $@)" = ".gz" ]; then \

@@ -6,8 +6,9 @@ After=network.target
 [Service]
 Type=notify
 EnvironmentFile=-/etc/default/telegraf
-User=telegraf
-ExecStart=/usr/bin/telegraf -config /etc/telegraf/telegraf.conf -config-directory /etc/telegraf/telegraf.d $TELEGRAF_OPTS
+User=_telegraf
+Group=_telegraf
+ExecStart=/usr/bin/telegraf -config-directory /etc/telegraf/telegraf.d $TELEGRAF_OPTS
 ExecReload=/bin/kill -HUP $MAINPID
 Restart=on-failure
 RestartForceExitStatus=SIGPIPE

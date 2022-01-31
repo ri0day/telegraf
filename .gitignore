@@ -1,16 +1,27 @@
+process.yml
+resource.syso
+versioninfo.json
+
+# Configuration
+/*.toml
+/*.conf
+
+# Editors
+.DS_Store
 /.idea
+/.vscode
+
+# Build Artifacts
 /build
 /telegraf
 /telegraf.exe
 /telegraf.gz
 /vendor
-.DS_Store
-process.yml
-/.vscode
-/*.toml
-/*.conf
-resource.syso
-versioninfo.json
+
+# Debian Build Artifacts
+*.buildinfo
+*.changes
+*.deb
 
 # Debian Build
 /packages/debian/.debhelper
@@ -18,8 +29,4 @@ versioninfo.json
 /packages/debian/debhelper-build-stamp
 /packages/debian/files
 /packages/debian/telegraf.substvars
-
-# Debian Build Artifacts
-*.buildinfo
-*.changes
-*.deb
+/packages/deiban/telegraf/

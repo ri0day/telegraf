@@ -10,6 +10,7 @@ set -eux
 # @echo $(deb_version)
   # 1.22.0~253fbe3d-1
 
+rm -f debian/changelog
 cat << EOF > debian/changelog
 telegraf (1.0) stable; urgency=medium
 

@@ -1,6 +1,5 @@
 /.idea
 /build
-/packages/debian/changelog
 /telegraf
 /telegraf.exe
 /telegraf.gz
@@ -12,3 +11,15 @@ process.yml
 /*.conf
 resource.syso
 versioninfo.json
+
+# Debian Build
+/packages/debian/.debhelper
+/packages/debian/changelog
+/packages/debian/debhelper-build-stamp
+/packages/debian/files
+/packages/debian/telegraf.substvars
+
+# Debian Build Artifacts
+*.buildinfo
+*.changes
+*.deb

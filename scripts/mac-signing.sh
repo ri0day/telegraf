@@ -102,3 +102,6 @@ do
 
   echo "$baseName.dmg signed and notarized!"
 done
+
+echo "Signing artifacts:"
+ls ~/project/build/dist

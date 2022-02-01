@@ -5,6 +5,8 @@ function cleanup () {
   printf "\n"
   rm -rf Telegraf
   rm -rf Telegraf.app
+  # remove erronious ._telegraf-1.21.2_darwin_[amd|arm]64.dmg files
+  rm -f ._telegraf*.dmg
 }
 
 # Acquire the necessary certificates.

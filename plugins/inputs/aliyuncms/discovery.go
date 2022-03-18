@@ -2,6 +2,7 @@ package aliyuncms
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -115,7 +116,7 @@ func newDiscoveryTool(regions []string, project string, lg telegraf.Logger, cred
 			responseObjectIDKey = "InstanceId"
 		case "acs_rds_dashboard":
 			dscReq[region] = rds.CreateDescribeDBInstancesRequest()
-			responseObjectIDKey = "DBInstanceId"
+			responseObjectIDKey = "Items"
 		case "acs_slb_dashboard":
 			dscReq[region] = slb.CreateDescribeLoadBalancersRequest()
 			responseObjectIDKey = "LoadBalancerId"
@@ -295,6 +296,8 @@ func (dt *discoveryTool) parseDiscoveryResponse(resp *responses.CommonResponse) 
 		return nil, errors.Errorf("Can't parse JSON from discovery response: %v", err)
 	}
 
+	fmt.Printf("discovery response output:\n%s\n", data)
+	fmt.Printf("loking for root key: '%s' or 'Items'\n", dt.respRootKey)
 	for key, val := range fullOutput {
 		switch key {
 		case dt.respRootKey:

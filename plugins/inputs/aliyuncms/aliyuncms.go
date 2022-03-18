@@ -383,6 +383,11 @@ func (s *AliyunCMS) gatherMetric(acc telegraf.Accumulator, metricName string, me
 		req.Dimensions = metric.requestDimensionsStr
 		req.RegionId = region
 
+		fmt.Println("Making the following request:")
+		fmt.Println(req)
+		fmt.Println("Request Dimensions:")
+		fmt.Println(req.Dimensions)
+
 		for more := true; more; {
 			resp, err := s.client.DescribeMetricList(req)
 			if err != nil {

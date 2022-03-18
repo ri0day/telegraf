@@ -49,6 +49,7 @@ type CloudWatch struct {
 	CacheTTL       config.Duration `toml:"cache_ttl"`
 	RateLimit      int             `toml:"ratelimit"`
 	RecentlyActive string          `toml:"recently_active"`
+	BatchSize      int             `toml:"batch_size"`
 
 	Log telegraf.Logger `toml:"-"`
 
@@ -164,6 +165,12 @@ func (c *CloudWatch) SampleConfig() string {
   ## Timeout for http requests made by the cloudwatch client.
   # timeout = "5s"
 
+  ## Batch Size
+  ## The size of each batch to send requests to Cloudwatch. 500 is the
+  ## suggested largest size. If a request gets to large (413 errors), consider
+  ## reducing this amount.
+  # batch_size = 500
+
   ## Namespace-wide statistic filters. These allow fewer queries to be made to
   ## cloudwatch.
   # statistic_include = [ "average", "sum", "minimum", "maximum", sample_count" ]
@@ -240,12 +247,10 @@ func (c *CloudWatch) Gather(acc telegraf.Accumulator) error {
 	results := map[string][]types.MetricDataResult{}
 
 	for namespace, namespacedQueries := range queries {
-		// 500 is the maximum number of metric data queries a `GetMetricData` request can contain.
-		batchSize := 500
 		var batches [][]types.MetricDataQuery
 
-		for batchSize < len(namespacedQueries) {
-			namespacedQueries, batches = namespacedQueries[batchSize:], append(batches, namespacedQueries[0:batchSize:batchSize])
+		for c.BatchSize < len(namespacedQueries) {
+			namespacedQueries, batches = namespacedQueries[c.BatchSize:], append(batches, namespacedQueries[0:c.BatchSize:c.BatchSize])
 		}
 		batches = append(batches, namespacedQueries)
 
@@ -620,6 +625,7 @@ func New() *CloudWatch {
 		CacheTTL:  config.Duration(time.Hour),
 		RateLimit: 25,
 		Timeout:   config.Duration(time.Second * 5),
+		BatchSize: 500,
 	}
 }
 

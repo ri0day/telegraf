@@ -157,7 +157,7 @@ func TestWriteTCP(t *testing.T) {
 			wg.Add(1)
 			address := make(chan string, 1)
 			errs := make(chan error)
-			fmt.Printf("test: staring TCP server")
+			fmt.Println("test: staring TCP server")
 			go TCPServer(t, &wg, tt.tlsServerConfig, address, errs)
 			require.NoError(t, <-errs)
 
@@ -286,7 +286,6 @@ func TCPServer(t *testing.T, wg *sync.WaitGroup, tlsConfig *tls.Config, address 
 	defer wg.Done()
 
 	accept := func() (net.Conn, error) {
-		fmt.Println("s: accept: starting connection listener")
 		conn, err := tcpServer.Accept()
 		require.NoError(t, err)
 		if tcpConn, ok := conn.(*net.TCPConn); ok {
@@ -335,7 +334,7 @@ func TCPServer(t *testing.T, wg *sync.WaitGroup, tlsConfig *tls.Config, address 
 		return nil
 	}
 
-	fmt.Printf("s: opening connection")
+	fmt.Println("s: opening connection")
 	conn, err := accept()
 	if err != nil {
 		fmt.Println(err)
@@ -344,18 +343,18 @@ func TCPServer(t *testing.T, wg *sync.WaitGroup, tlsConfig *tls.Config, address 
 
 	// in TCP scenario only 3 messages are received, the 3rd is lost due to simulated connection break after the 2nd
 
-	fmt.Printf("server: receving packet 1")
+	fmt.Println("server: receving packet 1")
 	err = recv(conn)
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Printf("server: receving packet 2")
+	fmt.Println("server: receving packet 2")
 	err = recv(conn)
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	fmt.Printf("server: closing connection")
+	fmt.Println("server: closing connection")
 	err = conn.Close()
 	if err != nil {
 		fmt.Println(err)
@@ -366,14 +365,14 @@ func TCPServer(t *testing.T, wg *sync.WaitGroup, tlsConfig *tls.Config, address 
 		return
 	}
 
-	fmt.Printf("server: re-opening connection")
+	fmt.Println("server: re-opening connection")
 	conn, err = accept()
 	if err != nil {
 		fmt.Println(err)
 	}
 	defer conn.Close()
 
-	fmt.Printf("server: receving packet 3")
+	fmt.Println("server: receving packet 4")
 	err = recv(conn)
 	if err != nil {
 		fmt.Println(err)

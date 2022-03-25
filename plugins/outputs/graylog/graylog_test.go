@@ -170,13 +170,13 @@ func TestWriteTCP(t *testing.T) {
 			defer i.Close()
 			defer wg.Wait()
 
+			metrics := testutil.MockMetrics()
+
 			// TCP scenario:
 			// 4 messages are send
 			// -> connection gets forcefully broken after the 2nd message (server closes connection)
 			// -> the 3rd write fails with error
 			// -> during the 4th write connection is restored and write is successful
-
-			metrics := testutil.MockMetrics()
 
 			fmt.Println("client: writting packet 1")
 			err = i.Write(metrics)

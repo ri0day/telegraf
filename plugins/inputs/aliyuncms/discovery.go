@@ -3,7 +3,6 @@ package aliyuncms
 import (
 	"encoding/json"
 	"reflect"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -89,9 +88,9 @@ func getRPCReqFromDiscoveryRequest(req discoveryRequest) (*requests.RpcRequest, 
 //Request against API can inquire additional costs, consult with aliyun API documentation.
 func newDiscoveryTool(regions []string, project string, lg telegraf.Logger, credential auth.Credential, rateLimit int, discoveryInterval time.Duration) (*discoveryTool, error) {
 	var (
-		dscReq                = map[string]discoveryRequest{}
-		cli                   = map[string]aliyunSdkClient{}
-		parseRootKey          = regexp.MustCompile(`Describe(.*)`)
+		dscReq = map[string]discoveryRequest{}
+		cli    = map[string]aliyunSdkClient{}
+		//parseRootKey          = regexp.MustCompile(`Describe(.*)`)
 		responseRootKey       string
 		responseObjectIDKey   string
 		err                   error
@@ -112,12 +111,15 @@ func newDiscoveryTool(regions []string, project string, lg telegraf.Logger, cred
 		switch project {
 		case "acs_ecs_dashboard":
 			dscReq[region] = ecs.CreateDescribeInstancesRequest()
+			responseRootKey = "Instances"
 			responseObjectIDKey = "InstanceId"
 		case "acs_rds_dashboard":
 			dscReq[region] = rds.CreateDescribeDBInstancesRequest()
+			responseRootKey = "Items"
 			responseObjectIDKey = "DBInstanceId"
 		case "acs_slb_dashboard":
 			dscReq[region] = slb.CreateDescribeLoadBalancersRequest()
+			responseRootKey = "LoadBalancers"
 			responseObjectIDKey = "LoadBalancerId"
 		case "acs_memcache":
 			return nil, noDiscoverySupportErr
@@ -238,11 +240,11 @@ func newDiscoveryTool(regions []string, project string, lg telegraf.Logger, cred
 	//Getting response root key (if not set already). This is to be able to parse discovery responses
 	//As they differ per object type
 	//Discovery requests are of the same type per every region, so pick the first one
-	rpcReq, err := getRPCReqFromDiscoveryRequest(dscReq[regions[0]])
+	//rpcReq, err := getRPCReqFromDiscoveryRequest(dscReq[regions[0]])
 	//This means that the discovery request is not of proper type/kind
-	if err != nil {
-		return nil, errors.Errorf("Can't parse rpc request object from  discovery request %v", dscReq[regions[0]])
-	}
+	//if err != nil {
+	//	return nil, errors.Errorf("Can't parse rpc request object from  discovery request %v", dscReq[regions[0]])
+	//}
 
 	/*
 		The action name is of the following format Describe<Project related title for managed instances>,
@@ -258,11 +260,11 @@ func newDiscoveryTool(regions []string, project string, lg telegraf.Logger, cred
 		}
 		As we can see, the root key is a part of action name, except first word (part) 'Describe'
 	*/
-	result := parseRootKey.FindStringSubmatch(rpcReq.GetActionName())
-	if result == nil || len(result) != 2 {
-		return nil, errors.Errorf("Can't parse the discovery response root key from request action name %q", rpcReq.GetActionName())
-	}
-	responseRootKey = result[1]
+	//result := parseRootKey.FindStringSubmatch(rpcReq.GetActionName())
+	//if result == nil || len(result) != 2 {
+	//	return nil, errors.Errorf("Can't parse the discovery response root key from request action name %q", rpcReq.GetActionName())
+	//}
+	//responseRootKey = result[1]
 
 	return &discoveryTool{
 		req:                dscReq,
@@ -271,7 +273,7 @@ func newDiscoveryTool(regions []string, project string, lg telegraf.Logger, cred
 		respObjectIDKey:    responseObjectIDKey,
 		rateLimit:          rateLimit,
 		interval:           discoveryInterval,
-		reqDefaultPageSize: 20,
+		reqDefaultPageSize: 100,
 		dataChan:           make(chan map[string]interface{}, 1),
 		lg:                 lg,
 	}, nil
@@ -313,9 +315,9 @@ func (dt *discoveryTool) parseDiscoveryResponse(resp *responses.CommonResponse) 
 			if !foundDataItem {
 				return nil, errors.Errorf("Didn't find array item in root key %q", key)
 			}
-		case "TotalCount":
+		case "TotalRecordCount":
 			pdResp.totalCount = int(val.(float64))
-		case "PageSize":
+		case "PageRecordCount":
 			pdResp.pageSize = int(val.(float64))
 		case "PageNumber":
 			pdResp.pageNumber = int(val.(float64))
